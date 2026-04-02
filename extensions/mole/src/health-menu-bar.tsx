@@ -1,8 +1,12 @@
-import { Icon, MenuBarExtra, open } from "@raycast/api";
+import { Cache, Icon, MenuBarExtra, getPreferenceValues, open } from "@raycast/api";
 import { useExec } from "@raycast/utils";
 import { getMolePathSafe } from "./utils/mole";
 import { formatPercent, type MoleStatus } from "./utils/parsers";
 import { getBatteryIcon, getHealthIcon, getUsageColor } from "./utils/icons";
+
+const cache = new Cache();
+const CACHE_KEY_TIMESTAMP = "health-menu-bar:last-fetch";
+const CACHE_KEY_DATA = "health-menu-bar:data";
 
 export default function HealthMenuBar() {
   const molePath = getMolePathSafe();
@@ -15,10 +19,27 @@ export default function HealthMenuBar() {
 }
 
 function HealthMenuBarView({ molePath }: { molePath: string }) {
-  const { data, isLoading } = useExec(molePath, ["status", "--json"], {
-    parseOutput: ({ stdout }) => JSON.parse(stdout) as MoleStatus,
+  const { refreshInterval } = getPreferenceValues<Preferences.HealthMenuBar>();
+  const intervalMs = (parseInt(refreshInterval ?? "60", 10) || 60) * 1000;
+
+  const lastFetch = parseInt(cache.get(CACHE_KEY_TIMESTAMP) ?? "0", 10);
+  const shouldFetch = Date.now() - lastFetch >= intervalMs;
+
+  const { data: freshData, isLoading } = useExec(molePath, ["status", "--json"], {
+    parseOutput: ({ stdout }) => {
+      cache.set(CACHE_KEY_TIMESTAMP, String(Date.now()));
+      cache.set(CACHE_KEY_DATA, stdout);
+      return JSON.parse(stdout) as MoleStatus;
+    },
     keepPreviousData: true,
+    execute: shouldFetch,
   });
+
+  let data = freshData;
+  if (!data) {
+    const raw = cache.get(CACHE_KEY_DATA);
+    if (raw) data = JSON.parse(raw) as MoleStatus;
+  }
 
   if (!data && !isLoading) {
     return null;
@@ -34,10 +55,7 @@ function HealthMenuBarView({ molePath }: { molePath: string }) {
       {data && (
         <>
           <MenuBarExtra.Section title="Health">
-            <MenuBarExtra.Item
-              icon={icon}
-              title={`${data.health_score}/100 — ${data.health_score_msg}`}
-            />
+            <MenuBarExtra.Item icon={icon} title={`${data.health_score}/100 — ${data.health_score_msg}`} />
           </MenuBarExtra.Section>
           <MenuBarExtra.Section title="System">
             <MenuBarExtra.Item
