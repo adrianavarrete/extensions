@@ -5,6 +5,9 @@
   "description": "Deep clean and optimize your Mac",
   "icon": "extension-icon.png",
   "author": "jlrochin",
+  "contributors": [
+    "adria_navarrete"
+  ],
   "platforms": [
     "macOS"
   ],
