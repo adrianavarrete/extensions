@@ -28,9 +28,14 @@ function HealthMenuBarView({ molePath }: { molePath: string }) {
   const { data: freshData, isLoading } = useExec(molePath, ["status", "--json"], {
     parseOutput: ({ stdout }) => {
       if (!stdout.trim()) return undefined as unknown as MoleStatus;
-      cache.set(CACHE_KEY_TIMESTAMP, String(Date.now()));
-      cache.set(CACHE_KEY_DATA, stdout);
-      return JSON.parse(stdout) as MoleStatus;
+      try {
+        const parsed = JSON.parse(stdout) as MoleStatus;
+        cache.set(CACHE_KEY_TIMESTAMP, String(Date.now()));
+        cache.set(CACHE_KEY_DATA, stdout);
+        return parsed;
+      } catch {
+        return undefined as unknown as MoleStatus;
+      }
     },
     keepPreviousData: true,
     execute: shouldFetch,
@@ -39,7 +44,14 @@ function HealthMenuBarView({ molePath }: { molePath: string }) {
   let data = freshData;
   if (!data) {
     const raw = cache.get(CACHE_KEY_DATA);
-    if (raw) data = JSON.parse(raw) as MoleStatus;
+    if (raw) {
+      try {
+        data = JSON.parse(raw) as MoleStatus;
+      } catch {
+        cache.remove(CACHE_KEY_DATA);
+        cache.remove(CACHE_KEY_TIMESTAMP);
+      }
+    }
   }
 
   if (!data && !isLoading) {
