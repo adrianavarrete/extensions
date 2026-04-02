@@ -27,6 +27,7 @@ function HealthMenuBarView({ molePath }: { molePath: string }) {
 
   const { data: freshData, isLoading } = useExec(molePath, ["status", "--json"], {
     parseOutput: ({ stdout }) => {
+      if (!stdout.trim()) return undefined as unknown as MoleStatus;
       cache.set(CACHE_KEY_TIMESTAMP, String(Date.now()));
       cache.set(CACHE_KEY_DATA, stdout);
       return JSON.parse(stdout) as MoleStatus;
@@ -46,7 +47,7 @@ function HealthMenuBarView({ molePath }: { molePath: string }) {
   }
 
   const icon = data ? getHealthIcon(data.health_score) : { source: "extension-icon.png" };
-  const title = data ? `${data.health_score}` : undefined;
+  const title = data ? `${data.health_score}` : "—";
   const primaryDisk = data?.disks?.[0];
   const battery = data?.batteries?.[0];
 
