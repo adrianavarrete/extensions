@@ -22,6 +22,9 @@ function HealthMenuBarView({ molePath }: { molePath: string }) {
   const { refreshInterval } = getPreferenceValues<Preferences.HealthMenuBar>();
   const intervalMs = (parseInt(refreshInterval ?? "60", 10) || 60) * 1000;
 
+  // The command's interval (package.json) is set to 30s to match the smallest
+  // refreshInterval preference. Raycast wakes us every 30s regardless of the
+  // user's choice, but skipped intervals are cheap — just a timestamp comparison.
   const lastFetch = parseInt(cache.get(CACHE_KEY_TIMESTAMP) ?? "0", 10);
   const shouldFetch = Date.now() - lastFetch >= intervalMs;
 
