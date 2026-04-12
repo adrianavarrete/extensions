@@ -1,6 +1,6 @@
 # Mole Changelog
 
-## [Health Menu Bar] - {PR_MERGE_DATE}
+## [Health Menu Bar] - 2026-04-12
 
 - Added Health Monitor menu bar command showing health score with color-coded heart icon (green ≥90, yellow ≥70, orange ≥50, red <50)
 - Added dropdown summary with CPU, RAM, disk, and battery metrics on click
